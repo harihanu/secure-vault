@@ -20,15 +20,21 @@ const App = (() => {
     // ─── Initialization ────────────────────────────────────────────
 
     async function init() {
-        Security.init();
-        Vault.init();
-        Session.init();
-        Session.onLock(handleLock);
+        try {
+            Security.init();
+            Vault.init();
+            Session.init();
+            Session.onLock(handleLock);
 
-        state.isFirstTime = !(await Vault.vaultExists());
+            state.isFirstTime = !(await Vault.vaultExists());
 
-        renderLockScreen();
-        attachEventListeners();
+            renderLockScreen();
+            attachEventListeners();
+        } catch (error) {
+            console.error('Init error:', error);
+            // Still attach listeners even if something fails
+            try { attachEventListeners(); } catch(e) { console.error('Listener error:', e); }
+        }
     }
 
     // ─── Lock Screen ───────────────────────────────────────────────
@@ -71,8 +77,15 @@ const App = (() => {
         const errorEl = document.getElementById('lock-error');
         const lockCard = document.getElementById('lock-card');
 
+        password = (password || '').trim();
+
         if (!password) {
             errorEl.textContent = 'Please enter your master password.';
+            return;
+        }
+
+        if (password.length < 4) {
+            errorEl.textContent = 'Password must be at least 4 characters.';
             return;
         }
 

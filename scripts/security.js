@@ -86,6 +86,9 @@ const Security = (() => {
     // ─── CSP Headers (meta tag enforcement) ────────────────────────
 
     function enforceCSP() {
+        // Skip CSP on file:// — it causes more problems than it solves
+        if (location.protocol === 'file:') return;
+
         if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
             const meta = document.createElement('meta');
             meta.httpEquiv = 'Content-Security-Policy';
@@ -107,6 +110,7 @@ const Security = (() => {
     // ─── Permission Policy ─────────────────────────────────────────
 
     function enforcePermissionsPolicy() {
+        if (location.protocol === 'file:') return;
         if (!document.querySelector('meta[http-equiv="Permissions-Policy"]')) {
             const meta = document.createElement('meta');
             meta.httpEquiv = 'Permissions-Policy';

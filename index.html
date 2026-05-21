@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Secure Local Personal Vault — Encrypted password manager">
     <meta name="theme-color" content="#0f172a">
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     <title>Secure Vault</title>
     <link rel="stylesheet" href="styles/main.css">
-    <link rel="manifest" href="assets/manifest.json">
 </head>
 <body>
 
@@ -543,8 +541,8 @@
 <script src="scripts/ui.js"></script>
 <script src="scripts/app.js"></script>
 <script>
-    // Register Service Worker for PWA offline support
-    if ('serviceWorker' in navigator) {
+    // Register Service Worker for PWA offline support (only on http/https, not file://)
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('assets/sw.js').catch(() => {});
         });
