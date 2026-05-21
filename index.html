@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure Local Personal Vault — Encrypted password manager">
+    <meta name="theme-color" content="#0f172a">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <title>Secure Vault</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="manifest" href="assets/manifest.json">
+</head>
+<body>
+
+<!--
+    ╔══════════════════════════════════════════════════════════════╗
+    ║  SECURE VAULT — Local Encrypted Password Manager            ║
+    ║                                                              ║
+    ║  SECURITY WARNINGS:                                          ║
+    ║  • Your master password CANNOT be recovered if forgotten.    ║
+    ║  • All data is encrypted locally. Nothing leaves your device.║
+    ║  • Back up your vault regularly via Export.                  ║
+    ║  • Use a strong, unique master password (12+ characters).    ║
+    ║                                                              ║
+    ║  USAGE:                                                      ║
+    ║  1. Open this file in any modern browser.                    ║
+    ║  2. Create a master password on first launch.               ║
+    ║  3. Add your passwords, keys, and sensitive data.           ║
+    ║  4. Export backups to USB for portability.                   ║
+    ║                                                              ║
+    ║  BROWSER COMPATIBILITY: Chrome 90+, Firefox 90+, Edge 90+   ║
+    ╚══════════════════════════════════════════════════════════════╝
+-->
+
+<!-- ═══ LOCK SCREEN ═══════════════════════════════════════════════ -->
+<div id="lock-screen" class="lock-screen">
+    <div class="lock-card" id="lock-card">
+        <div class="lock-icon">🛡️</div>
+        <h1>Secure Vault</h1>
+        <p class="lock-subtitle">Your local encrypted password manager</p>
+
+        <form id="login-form" autocomplete="off">
+            <div class="input-group">
+                <input type="password" id="master-password" placeholder="Master Password" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button type="button" id="toggle-password" class="icon-btn" title="Toggle visibility">👁️</button>
+            </div>
+
+            <div class="input-group hidden" id="totp-group">
+                <input type="text" id="totp-code" placeholder="2FA Code (6 digits)" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            </div>
+
+            <div class="strength-bar hidden" id="strength-bar">
+                <div class="strength-segments" id="strength-segments"></div>
+                <span class="strength-label" id="strength-label"></span>
+            </div>
+
+            <button type="submit" id="unlock-btn" class="btn btn-primary btn-full">
+                Unlock Vault
+            </button>
+        </form>
+
+        <p class="lock-hint hidden" id="first-time-hint">
+            First time? Enter a master password to create your vault.
+        </p>
+        <p class="lock-error" id="lock-error"></p>
+        <p class="lock-warning">
+            ⚠️ If you forget your master password, your data cannot be recovered.
+        </p>
+    </div>
+</div>
+
+<!-- ═══ DASHBOARD ═════════════════════════════════════════════════ -->
+<div id="dashboard" class="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo">🛡️</span>
+            <h2>Secure Vault</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Vault</div>
+                <div class="nav-item active" data-view="all">
+                    <span class="icon">📋</span>
+                    <span>All Items</span>
+                    <span class="count" id="count-all">0</span>
+                </div>
+                <div class="nav-item" data-view="favorites">
+                    <span class="icon">⭐</span>
+                    <span>Favorites</span>
+                    <span class="count" id="count-favorites">0</span>
+                </div>
+                <div class="nav-item" data-view="trash">
+                    <span class="icon">🗑️</span>
+                    <span>Trash</span>
+                    <span class="count" id="count-trash">0</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Categories</div>
+                <div class="nav-item" data-view="passwords">
+                    <span class="icon">🔑</span>
+                    <span>Passwords</span>
+                    <span class="count" id="count-passwords">0</span>
+                </div>
+                <div class="nav-item" data-view="apikeys">
+                    <span class="icon">⚙️</span>
+                    <span>API Keys</span>
+                    <span class="count" id="count-apikeys">0</span>
+                </div>
+                <div class="nav-item" data-view="bank">
+                    <span class="icon">🏦</span>
+                    <span>Bank</span>
+                    <span class="count" id="count-bank">0</span>
+                </div>
+                <div class="nav-item" data-view="cards">
+                    <span class="icon">💳</span>
+                    <span>Cards</span>
+                    <span class="count" id="count-cards">0</span>
+                </div>
+                <div class="nav-item" data-view="notes">
+                    <span class="icon">📝</span>
+                    <span>Notes</span>
+                    <span class="count" id="count-notes">0</span>
+                </div>
+                <div class="nav-item" data-view="identities">
+                    <span class="icon">👤</span>
+                    <span>Identities</span>
+                    <span class="count" id="count-identities">0</span>
+                </div>
+                <div class="nav-item" data-view="licenses">
+                    <span class="icon">📜</span>
+                    <span>Licenses</span>
+                    <span class="count" id="count-licenses">0</span>
+                </div>
+                <div class="nav-item" data-view="sshkeys">
+                    <span class="icon">🔐</span>
+                    <span>SSH Keys</span>
+                    <span class="count" id="count-sshkeys">0</span>
+                </div>
+                <div class="nav-item" data-view="recovery">
+                    <span class="icon">🔄</span>
+                    <span>Recovery Codes</span>
+                    <span class="count" id="count-recovery">0</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Tags</div>
+                <div id="tags-list"></div>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="nav-item" id="btn-settings">
+                <span class="icon">⚙️</span>
+                <span>Settings</span>
+            </div>
+            <div class="nav-item" id="btn-lock">
+                <span class="icon">🔒</span>
+                <span>Lock Vault</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Sidebar Backdrop (mobile) -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Top Bar -->
+    <header class="topbar">
+        <button class="hamburger" id="hamburger" title="Menu">☰</button>
+
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search entries..." autocomplete="off">
+            <span class="search-shortcut">Ctrl+K</span>
+        </div>
+
+        <div class="topbar-actions">
+            <div class="view-toggle">
+                <button id="view-grid" class="active" title="Grid view">▦</button>
+                <button id="view-list" title="List view">☰</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-add" title="Add entry (Ctrl+N)">
+                <span>+</span>
+                <span class="btn-text">Add New</span>
+            </button>
+            <button class="btn btn-ghost btn-icon" id="btn-export" title="Export vault">📤</button>
+            <button class="btn btn-ghost btn-icon" id="btn-import" title="Import vault">📥</button>
+            <button class="btn btn-ghost btn-icon" id="btn-health" title="Password health">🏥</button>
+            <button class="btn btn-ghost btn-icon" id="btn-audit" title="Audit log">📋</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content" id="content">
+        <div class="content-header">
+            <h2 id="content-title">All Items</h2>
+            <span class="entry-count" id="entry-count">0 entries</span>
+        </div>
+
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Total Entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-favorites">0</div>
+                <div class="stat-label">Favorites</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-categories">0</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-last-backup">Never</div>
+                <div class="stat-label">Last Backup</div>
+            </div>
+        </div>
+
+        <div class="entries-grid" id="entries-container"></div>
+    </main>
+</div>
+
+<!-- ═══ ENTRY DETAIL MODAL ════════════════════════════════════════ -->
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="detail-title">Entry Details</h2>
+            <button class="modal-close" id="detail-close">&times;</button>
+        </div>
+        <div class="modal-body" id="detail-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="detail-delete">🗑️ Delete</button>
+            <button class="btn btn-secondary" id="detail-edit">✏️ Edit</button>
+            <button class="btn btn-primary" id="detail-close-btn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ADD/EDIT MODAL ═════════════════════════════════════════════ -->
+<div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="edit-title">Add Entry</h2>
+            <button class="modal-close" id="edit-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="edit-form" autocomplete="off">
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="category-selector" id="category-selector">
+                        <div class="category-option selected" data-category="passwords">
+                            <span class="cat-icon">🔑</span>
+                            <span class="cat-label">Password</span>
+                        </div>
+                        <div class="category-option" data-category="apikeys">
+                            <span class="cat-icon">⚙️</span>
+                            <span class="cat-label">API Key</span>
+                        </div>
+                        <div class="category-option" data-category="bank">
+                            <span class="cat-icon">🏦</span>
+                            <span class="cat-label">Bank</span>
+                        </div>
+                        <div class="category-option" data-category="cards">
+                            <span class="cat-icon">💳</span>
+                            <span class="cat-label">Card</span>
+                        </div>
+                        <div class="category-option" data-category="notes">
+                            <span class="cat-icon">📝</span>
+                            <span class="cat-label">Note</span>
+                        </div>
+                        <div class="category-option" data-category="identities">
+                            <span class="cat-icon">👤</span>
+                            <span class="cat-label">Identity</span>
+                        </div>
+                        <div class="category-option" data-category="licenses">
+                            <span class="cat-icon">📜</span>
+                            <span class="cat-label">License</span>
+                        </div>
+                        <div class="category-option" data-category="sshkeys">
+                            <span class="cat-icon">🔐</span>
+                            <span class="cat-label">SSH Key</span>
+                        </div>
+                        <div class="category-option" data-category="recovery">
+                            <span class="cat-icon">🔄</span>
+                            <span class="cat-label">Recovery</span>
+                        </div>
+                        <div class="category-option" data-category="custom">
+                            <span class="cat-icon">📌</span>
+                            <span class="cat-label">Custom</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="entry-title">Title *</label>
+                    <input type="text" id="entry-title" required placeholder="e.g., Gmail, AWS Production">
+                </div>
+
+                <div id="dynamic-fields"></div>
+
+                <div class="form-group">
+                    <label for="entry-tags">Tags</label>
+                    <input type="text" id="entry-tags" placeholder="Comma-separated tags">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" id="entry-favorite">
+                        <span>⭐ Mark as Favorite</span>
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="edit-cancel">Cancel</button>
+            <button class="btn btn-primary" id="edit-save">Save Entry</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SETTINGS MODAL ═════════════════════════════════════════════ -->
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>⚙️ Settings</h2>
+            <button class="modal-close" id="settings-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-section">
+                <h3>Security</h3>
+                <div class="settings-row">
+                    <label>Auto-lock timeout (minutes)</label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="range" id="setting-autolock" min="1" max="30" value="5">
+                        <span class="range-value" id="autolock-value">5</span>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <label>Clipboard clear timeout (seconds)</label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="range" id="setting-clipboard" min="10" max="60" value="30">
+                        <span class="range-value" id="clipboard-value">30</span>
+                    </div>
+                </div>
+                <div class="settings-row">
+                    <label>Lock on tab hidden</label>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-lockontab" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Two-Factor Authentication</h3>
+                <div id="totp-status">
+                    <p style="color:var(--text-secondary);margin-bottom:12px;">2FA is not enabled.</p>
+                    <button class="btn btn-secondary btn-sm" id="btn-setup-totp">Setup 2FA</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Backup</h3>
+                <div class="settings-row">
+                    <button class="btn btn-secondary btn-sm" id="btn-settings-export">📤 Export Vault</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-settings-import">📥 Import Vault</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Audit Log</h3>
+                <div class="audit-log" id="audit-log-viewer">
+                    <p style="color:var(--text-muted);text-align:center;">No entries yet.</p>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Danger Zone</h3>
+                <div class="settings-row">
+                    <div>
+                        <label>Delete all data</label>
+                        <p style="font-size:0.8rem;color:var(--text-muted);">Permanently delete vault and all data.</p>
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="btn-delete-all">Delete Everything</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="settings-save">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TOTP SETUP MODAL ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="totp-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>🔐 Setup Two-Factor Authentication</h2>
+            <button class="modal-close" id="totp-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:var(--text-secondary);margin-bottom:16px;">
+                Enter this secret in your authenticator app (Google Authenticator, Authy, etc.):
+            </p>
+            <div class="detail-field-value" style="margin-bottom:16px;">
+                <span class="value-text" id="totp-secret-display" style="font-family:var(--font-mono);letter-spacing:2px;"></span>
+                <button class="btn btn-ghost btn-sm" id="copy-totp-secret">📋</button>
+            </div>
+            <div class="form-group">
+                <label>Enter verification code from your app</label>
+                <input type="text" id="totp-verify-code" maxlength="6" inputmode="numeric" placeholder="6-digit code">
+            </div>
+            <div class="form-group">
+                <h4 style="margin-bottom:8px;">Recovery Codes</h4>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">Save these codes securely. Each can be used once if you lose access to your authenticator.</p>
+                <div id="recovery-codes-display" style="font-family:var(--font-mono);background:var(--bg-tertiary);padding:12px;border-radius:var(--radius-sm);font-size:0.85rem;"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="totp-cancel">Cancel</button>
+            <button class="btn btn-primary" id="totp-confirm">Verify & Enable</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ PASSWORD HEALTH MODAL ══════════════════════════════════════ -->
+<div class="modal-overlay" id="health-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>🏥 Password Health</h2>
+            <button class="modal-close" id="health-close">&times;</button>
+        </div>
+        <div class="modal-body" id="health-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="health-close-btn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ IMPORT MODAL ═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="import-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>📥 Import Vault</h2>
+            <button class="modal-close" id="import-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Select .vault file</label>
+                <input type="file" id="import-file" accept=".vault,.json">
+            </div>
+            <div class="form-group">
+                <label>Import mode</label>
+                <div style="display:flex;gap:16px;margin-top:8px;">
+                    <label class="form-checkbox">
+                        <input type="radio" name="import-mode" value="merge" checked>
+                        <span>Merge (add new, update existing)</span>
+                    </label>
+                    <label class="form-checkbox">
+                        <input type="radio" name="import-mode" value="replace">
+                        <span>Replace all</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="import-password-group">
+                <label>Master password for imported file</label>
+                <input type="password" id="import-password" placeholder="Enter the vault's master password">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="import-cancel">Cancel</button>
+            <button class="btn btn-primary" id="import-confirm">Import</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ CONFIRM DIALOG ═════════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="modal" style="max-width:400px;">
+        <div class="modal-body">
+            <div class="confirm-body">
+                <div class="confirm-icon" id="confirm-icon">⚠️</div>
+                <h3 id="confirm-title">Are you sure?</h3>
+                <p id="confirm-message">This action cannot be undone.</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+            <button class="btn btn-danger" id="confirm-ok">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ KEYBOARD SHORTCUTS OVERLAY ═════════════════════════════════ -->
+<div class="shortcuts-overlay" id="shortcuts-overlay">
+    <div class="shortcuts-card">
+        <h2>⌨️ Keyboard Shortcuts</h2>
+        <div class="shortcut-row">
+            <span class="shortcut-desc">Search entries</span>
+            <span class="shortcut-keys"><span class="key">Ctrl</span><span class="key">K</span></span>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-desc">Add new entry</span>
+            <span class="shortcut-keys"><span class="key">Ctrl</span><span class="key">N</span></span>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-desc">Close modal</span>
+            <span class="shortcut-keys"><span class="key">Esc</span></span>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-desc">Lock vault (panic)</span>
+            <span class="shortcut-keys"><span class="key">Ctrl</span><span class="key">Shift</span><span class="key">L</span></span>
+        </div>
+        <div class="shortcut-row">
+            <span class="shortcut-desc">Show shortcuts</span>
+            <span class="shortcut-keys"><span class="key">?</span></span>
+        </div>
+        <div style="text-align:center;margin-top:20px;">
+            <button class="btn btn-secondary" id="shortcuts-close">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ════════════════════════════════════════════ -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ═══ SCRIPTS ════════════════════════════════════════════════════ -->
+<script src="scripts/validators.js"></script>
+<script src="scripts/storage.js"></script>
+<script src="scripts/security.js"></script>
+<script src="scripts/password-generator.js"></script>
+<script src="scripts/search.js"></script>
+<script src="scripts/audit.js"></script>
+<script src="scripts/vault.js"></script>
+<script src="scripts/session.js"></script>
+<script src="scripts/settings.js"></script>
+<script src="scripts/backup.js"></script>
+<script src="scripts/ui.js"></script>
+<script src="scripts/app.js"></script>
+<script>
+    // Register Service Worker for PWA offline support
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('assets/sw.js').catch(() => {});
+        });
+    }
+</script>
+
+</body>
+</html>
