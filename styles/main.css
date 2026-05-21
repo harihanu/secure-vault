@@ -190,13 +190,19 @@ h4 { font-size: 1rem; font-weight: 600; }
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
     cursor: pointer;
-    padding: 8px;
-    font-size: 1.1rem;
-    transition: color var(--transition);
+    padding: 8px 10px;
+    font-size: 1rem;
+    z-index: 2;
+    transition: all var(--transition);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .input-group .icon-btn:hover {

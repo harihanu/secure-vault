@@ -416,7 +416,14 @@ const App = (() => {
         // Password toggle
         document.getElementById('toggle-password').addEventListener('click', () => {
             const input = document.getElementById('master-password');
-            input.type = input.type === 'password' ? 'text' : 'password';
+            const btn = document.getElementById('toggle-password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Show';
+            }
         });
 
         // Password strength on lock screen
