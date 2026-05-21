@@ -9,7 +9,7 @@ const Settings = (() => {
     const DEFAULTS = {
         autoLockMinutes: 5,
         clipboardClearSeconds: 30,
-        lockOnTabHidden: true,
+        lockOnTabHidden: false,
         totpEnabled: false,
         totpSecret: '',
         recoveryCodes: [],

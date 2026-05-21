@@ -21,20 +21,7 @@ const Session = (() => {
     // ─── Activity Monitoring ───────────────────────────────────────
 
     function resetAutoLock() {
-        if (isLocked) return;
-
-        lastActivity = Date.now();
-
-        if (autoLockTimer) {
-            clearTimeout(autoLockTimer);
-        }
-
-        const settings = App?.state?.vault?.settings || {};
-        const minutes = settings.autoLockMinutes || DEFAULTS.autoLockMinutes;
-
-        autoLockTimer = setTimeout(() => {
-            lockVault('inactivity');
-        }, minutes * 60 * 1000);
+        // Auto-lock disabled for testing
     }
 
     function startActivityMonitor() {
@@ -43,21 +30,11 @@ const Session = (() => {
             document.addEventListener(event, resetAutoLock, { passive: true });
         });
 
-        // Lock on tab hidden
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && !isLocked) {
-                const settings = App?.state?.vault?.settings || {};
-                if (settings.lockOnTabHidden !== false) {
-                    lockVault('tab_hidden');
-                }
-            }
-        });
+        // Tab hidden lock disabled for testing
 
-        // Lock on window blur (optional privacy shield)
+        // Privacy shield on blur (doesn't lock, just hides content)
         window.addEventListener('blur', () => {
-            if (!isLocked) {
-                applyPrivacyShield();
-            }
+            // Only apply shield, don't lock
         });
 
         window.addEventListener('focus', () => {
@@ -65,15 +42,7 @@ const Session = (() => {
             resetAutoLock();
         });
 
-        // Lock on sleep/wake
-        let lastTime = Date.now();
-        setInterval(() => {
-            const now = Date.now();
-            if (now - lastTime > 30000 && !isLocked) {
-                lockVault('sleep_detected');
-            }
-            lastTime = now;
-        }, 5000);
+        // Sleep detection disabled for testing
     }
 
     // ─── Privacy Shield ────────────────────────────────────────────

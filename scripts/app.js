@@ -136,7 +136,7 @@ const App = (() => {
 
             renderDashboard();
             showScreen('dashboard');
-            showToast('Vault created successfully!', 'success');
+            UI.showToast('Vault created successfully!', 'success');
         } catch (error) {
             errorEl.textContent = 'Failed to create vault: ' + error.message;
         }
@@ -181,7 +181,7 @@ const App = (() => {
 
             renderDashboard();
             showScreen('dashboard');
-            showToast('Vault unlocked', 'success');
+            UI.showToast('Vault unlocked', 'success');
         } catch (error) {
             errorEl.textContent = 'Incorrect master password.';
             Security.recordFailedAttempt();
@@ -220,17 +220,21 @@ const App = (() => {
         showScreen('lock-screen');
 
         if (reason === 'panic') {
-            showToast('Vault locked (panic)', 'warning');
+            UI.showToast('Vault locked (panic)', 'warning');
         } else if (reason === 'inactivity') {
-            showToast('Vault locked due to inactivity', 'info');
+            UI.showToast('Vault locked due to inactivity', 'info');
         }
     }
 
     // ─── Entry CRUD ────────────────────────────────────────────────
 
     async function saveEntry(data) {
-        if (!state.vault) return;
+        if (!state.vault) {
+            UI.showToast('No vault loaded', 'error');
+            return;
+        }
 
+        try {
         const sanitized = Validators.sanitizeObject(data);
 
         if (UI.getCurrentEditId()) {
@@ -243,7 +247,7 @@ const App = (() => {
                     updatedAt: new Date().toISOString()
                 };
                 Audit.log('entry_updated', `Updated: ${sanitized.title}`);
-                showToast('Entry updated', 'success');
+                UI.showToast('Entry updated', 'success');
             }
         } else {
             // Create
@@ -255,12 +259,16 @@ const App = (() => {
                 updatedAt: new Date().toISOString()
             });
             Audit.log('entry_created', `Created: ${sanitized.title}`);
-            showToast('Entry created', 'success');
+            UI.showToast('Entry created', 'success');
         }
 
         await saveVaultState();
         renderDashboard();
         UI.closeModal('edit-modal');
+        } catch (error) {
+            UI.showToast('Failed to save: ' + error.message, 'error');
+            console.error('Save error:', error);
+        }
     }
 
     async function deleteEntry(id) {
@@ -284,7 +292,7 @@ const App = (() => {
         await saveVaultState();
         renderDashboard();
         UI.closeModal('detail-modal');
-        showToast('Entry deleted', 'success');
+        UI.showToast('Entry deleted', 'success');
     }
 
     async function toggleFavorite(id) {
@@ -306,7 +314,7 @@ const App = (() => {
             const envelope = await Vault.saveVault(state.vault, state.masterPassword, state.salt);
             state.salt = envelope.salt;
         } catch (error) {
-            showToast('Failed to save vault: ' + error.message, 'error');
+            UI.showToast('Failed to save vault: ' + error.message, 'error');
         }
     }
 
@@ -328,7 +336,7 @@ const App = (() => {
 
             UI.openModal('totp-modal');
         } catch (error) {
-            showToast('Failed to setup 2FA: ' + error.message, 'error');
+            UI.showToast('Failed to setup 2FA: ' + error.message, 'error');
         }
     }
 
@@ -336,14 +344,14 @@ const App = (() => {
         const code = document.getElementById('totp-verify-code').value.trim();
 
         if (!code || code.length !== 6) {
-            showToast('Enter a 6-digit code', 'error');
+            UI.showToast('Enter a 6-digit code', 'error');
             return;
         }
 
         try {
             const valid = await Vault.verifyTOTP(state.pendingTOTPSecret, code);
             if (!valid) {
-                showToast('Invalid code. Try again.', 'error');
+                UI.showToast('Invalid code. Try again.', 'error');
                 return;
             }
 
@@ -355,10 +363,10 @@ const App = (() => {
 
             await saveVaultState();
             UI.closeModal('totp-modal');
-            showToast('2FA enabled successfully!', 'success');
+            UI.showToast('2FA enabled successfully!', 'success');
             Settings.syncToUI();
         } catch (error) {
-            showToast('Verification failed: ' + error.message, 'error');
+            UI.showToast('Verification failed: ' + error.message, 'error');
         }
     }
 
@@ -379,7 +387,7 @@ const App = (() => {
         });
 
         await saveVaultState();
-        showToast('2FA disabled', 'success');
+        UI.showToast('2FA disabled', 'success');
         Settings.syncToUI();
     }
 
@@ -535,8 +543,8 @@ const App = (() => {
             const password = document.getElementById('import-password').value;
             const mode = document.querySelector('input[name="import-mode"]:checked').value;
 
-            if (!file) { showToast('Select a file', 'error'); return; }
-            if (!password) { showToast('Enter the vault password', 'error'); return; }
+            if (!file) { UI.showToast('Select a file', 'error'); return; }
+            if (!password) { UI.showToast('Enter the vault password', 'error'); return; }
 
             const success = await Backup.importVault(file, mode, password);
             if (success) UI.closeModal('import-modal');
@@ -572,7 +580,7 @@ const App = (() => {
             Settings.syncFromUI();
             await saveVaultState();
             UI.closeModal('settings-modal');
-            showToast('Settings saved', 'success');
+            UI.showToast('Settings saved', 'success');
         });
 
         // Settings sliders
@@ -621,7 +629,7 @@ const App = (() => {
                 renderLockScreen();
                 showScreen('lock-screen');
                 UI.closeModal('settings-modal');
-                showToast('All data deleted', 'success');
+                UI.showToast('All data deleted', 'success');
             }
         });
 
@@ -663,21 +671,40 @@ const App = (() => {
         document.getElementById('edit-cancel').addEventListener('click', () => UI.closeModal('edit-modal'));
 
         document.getElementById('edit-save').addEventListener('click', async () => {
-            const data = UI.collectEditData();
-            if (data) {
-                await saveEntry(data);
+            console.log('Save button clicked');
+            try {
+                const data = UI.collectEditData();
+                console.log('Collected data:', data);
+                if (data) {
+                    console.log('Calling saveEntry...');
+                    await saveEntry(data);
+                    console.log('saveEntry completed');
+                } else {
+                    console.log('collectEditData returned null');
+                }
+            } catch (err) {
+                console.error('Save click error:', err);
+                UI.showToast('Error: ' + err.message, 'error');
             }
+        });
+
+        // Prevent form submit on Enter key
+        document.getElementById('edit-form').addEventListener('submit', (e) => {
+            e.preventDefault();
         });
 
         // Category selector in edit modal
         document.getElementById('category-selector').addEventListener('click', (e) => {
             const option = e.target.closest('.category-option');
             if (option) {
+                const cat = option.dataset.category;
+                console.log('Category clicked:', cat);
                 document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
 
                 const entry = UI.getCurrentEditId() ? state.vault.entries.find(e => e.id === UI.getCurrentEditId()) : null;
-                UI.renderDynamicFields(option.dataset.category, entry);
+                UI.renderDynamicFields(cat, entry);
+                console.log('After renderDynamicFields, currentEditCategory:', UI.getCurrentEditCategory());
             }
         });
 
