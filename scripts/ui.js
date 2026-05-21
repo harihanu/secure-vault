@@ -438,9 +438,9 @@ const UI = (() => {
 
     // ─── Edit Modal ────────────────────────────────────────────────
 
-    function openEditModal(entry = null) {
+    function openEditModal(entry = null, defaultCategory = 'passwords') {
         currentEditId = entry ? entry.id : null;
-        currentEditCategory = entry ? entry.category : 'passwords';
+        currentEditCategory = entry ? entry.category : defaultCategory;
 
         document.getElementById('edit-title').textContent = entry ? 'Edit Entry' : 'Add Entry';
 
@@ -884,6 +884,7 @@ const UI = (() => {
         renderStats,
         showEntryDetail,
         openEditModal,
+        renderDynamicFields,
         collectEditData,
         showHealthDashboard,
         renderAuditLog,

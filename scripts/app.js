@@ -422,7 +422,11 @@ const App = (() => {
     // ─── Open Add Modal ────────────────────────────────────────────
 
     function openAddModal() {
-        UI.openEditModal(null);
+        const view = state.currentView;
+        // Map sidebar view to a valid category
+        const validCategories = ['passwords', 'apikeys', 'bank', 'cards', 'notes', 'identities', 'licenses', 'sshkeys', 'recovery', 'custom'];
+        const category = validCategories.includes(view) ? view : 'passwords';
+        UI.openEditModal(null, category);
     }
 
     // ─── Event Listeners ───────────────────────────────────────────
