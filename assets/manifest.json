@@ -12,6 +12,11 @@
     "theme_color": "#00d4ff",
     "categories": ["security", "utilities"],
     "prefer_related_applications": false,
+    "related_applications": [],
+    "iarc_rating_id": "e84b55e2-b44a-4372-9446-93a354e5b4b2",
+    "lang": "en",
+    "dir": "ltr",
+    "scope_extensions": [],
     "launch_handler": {
         "client_mode": "navigate-existing"
     },
