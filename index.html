@@ -562,7 +562,7 @@
     // Register Service Worker for PWA offline support (only on http/https, not file://)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('assets/sw.js').catch(() => {});
+            navigator.serviceWorker.register('sw.js').catch(() => {});
         });
     }
 </script>
