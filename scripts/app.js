@@ -681,9 +681,14 @@ const App = (() => {
             document.getElementById('clipboard-value').textContent = e.target.value;
         });
 
-        // TOTP setup from settings
-        document.getElementById('btn-setup-totp')?.addEventListener('click', setupTOTP);
-        document.getElementById('btn-disable-totp')?.addEventListener('click', disableTOTP);
+        // TOTP setup from settings (using event delegation for dynamically created buttons)
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'btn-setup-totp') {
+                setupTOTP();
+            } else if (e.target.id === 'btn-disable-totp') {
+                disableTOTP();
+            }
+        });
 
         document.getElementById('totp-confirm').addEventListener('click', confirmTOTP);
         document.getElementById('totp-cancel').addEventListener('click', () => UI.closeModal('totp-modal'));
