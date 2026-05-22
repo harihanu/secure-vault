@@ -5,7 +5,7 @@
  * IMPORTANT: Never cache decrypted vault content.
  */
 
-const CACHE_NAME = 'secure-vault-v2';
+const CACHE_NAME = 'secure-vault-v3';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -29,7 +29,7 @@ const STATIC_ASSETS = [
     './assets/icon-512.png'
 ];
 
-// ─── Install ──────────────────────────────────────────────────────
+// ─── Install — Pre-cache app shell ────────────────────────────────
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -39,7 +39,7 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// ─── Activate ─────────────────────────────────────────────────────
+// ─── Activate — Clean old caches ──────────────────────────────────
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
@@ -53,47 +53,47 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ─── Fetch — Cache-first for static assets ────────────────────────
+// ─── Fetch — Offline-first with network fallback ──────────────────
 
 self.addEventListener('fetch', (event) => {
-    // Only cache GET requests for same-origin static assets
     if (event.request.method !== 'GET') return;
 
-    const url = new URL(event.request.url);
-
-    // Only cache same-origin requests
-    if (url.origin !== location.origin) return;
-
-    // Never cache API calls or dynamic endpoints
-    if (url.pathname.includes('/api/')) return;
-
-    // Cache-first strategy for static assets
-    if (STATIC_ASSETS.some(asset => {
-        const assetPath = new URL(asset, location.origin).pathname;
-        return url.pathname === assetPath || url.pathname === assetPath.replace(/\/$/, '');
-    })) {
-        event.respondWith(
-            caches.match(event.request).then(cached => {
-                if (cached) return cached;
-                return fetch(event.request).then(response => {
-                    if (response.ok) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                    }
-                    return response;
-                });
-            })
-        );
-        return;
-    }
-
-    // Network-first for everything else (vault data, etc.)
     event.respondWith(
-        fetch(event.request).catch(() => caches.match(event.request))
+        caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            return fetch(event.request).then(response => {
+                if (!response || response.status !== 200 || response.type !== 'basic') {
+                    return response;
+                }
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseToCache);
+                });
+                return response;
+            }).catch(() => {
+                if (event.request.destination === 'document') {
+                    return caches.match('./index.html');
+                }
+            });
+        })
     );
 });
 
-// ─── Background Sync (placeholder) ────────────────────────────────
+// ─── Periodic Background Sync ─────────────────────────────────────
+
+self.addEventListener('periodicsync', (event) => {
+    if (event.tag === 'vault-check') {
+        event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => {
+                return cache.addAll(STATIC_ASSETS);
+            })
+        );
+    }
+});
+
+// ─── Background Sync ──────────────────────────────────────────────
 
 self.addEventListener('sync', (event) => {
     if (event.tag === 'background-sync') {
@@ -101,7 +101,7 @@ self.addEventListener('sync', (event) => {
     }
 });
 
-// ─── Push Notifications (placeholder) ─────────────────────────────
+// ─── Push Notifications ───────────────────────────────────────────
 
 self.addEventListener('push', (event) => {
     // Placeholder for future push notifications
