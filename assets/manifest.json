@@ -6,7 +6,7 @@
     "start_url": "/secure-vault/",
     "scope": "/secure-vault/",
     "display": "standalone",
-    "display_override": ["window-controls-overlay", "standalone"],
+    "display_override": ["window-controls-overlay", "standalone", "tabbed"],
     "orientation": "portrait",
     "background_color": "#0f172a",
     "theme_color": "#00d4ff",
@@ -28,6 +28,42 @@
     ],
     "launch_handler": {
         "client_mode": "navigate-existing"
+    },
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "widgets": [
+        {
+            "name": "Secure Vault Quick Access",
+            "tag": "secure-vault-widget",
+            "ms_ac_template": "widget-template.json",
+            "data": "/secure-vault/?widget=data",
+            "type": "application/json",
+            "icons": [
+                {
+                    "src": "icon-192.png",
+                    "sizes": "192x192"
+                }
+            ],
+            "screenshots": [
+                {
+                    "src": "screenshot-desktop.png",
+                    "sizes": "1280x720",
+                    "label": "Secure Vault widget"
+                }
+            ],
+            "description": "Quick access to your secure vault entries",
+            "categories": ["security", "utilities"],
+            "backgrounds": [
+                {
+                    "src": "icon-512.png",
+                    "sizes": "512x512"
+                }
+            ]
+        }
+    ],
+    "note_taking": {
+        "new_note_url": "/secure-vault/?action=add&type=notes"
     },
     "file_handlers": [
         {
