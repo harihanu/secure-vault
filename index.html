@@ -4,8 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Secure Local Personal Vault — Encrypted password manager">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#00d4ff">
     <title>Secure Vault</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="assets/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-72.png">
+
+    <!-- Apple PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Secure Vault">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
@@ -64,6 +78,10 @@
         <p class="lock-warning">
             ⚠️ If you forget your master password, your data cannot be recovered.
         </p>
+
+        <button type="button" id="install-btn" class="btn btn-secondary btn-full" style="display:none; margin-top:12px;">
+            📲 Install App
+        </button>
     </div>
 </div>
 

@@ -860,3 +860,32 @@ const App = (() => {
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
+
+// ─── PWA Install Prompt ───────────────────────────────────────────
+
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    console.log('[PWA] Install prompt captured');
+
+    // Show install button if it exists
+    const installBtn = document.getElementById('install-btn');
+    if (installBtn) {
+        installBtn.style.display = 'block';
+        installBtn.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const result = await deferredInstallPrompt.userChoice;
+            console.log('[PWA] Install result:', result.outcome);
+            deferredInstallPrompt = null;
+            installBtn.style.display = 'none';
+        });
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App installed successfully');
+    deferredInstallPrompt = null;
+});

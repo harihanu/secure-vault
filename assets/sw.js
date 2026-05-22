@@ -5,7 +5,7 @@
  * IMPORTANT: Never cache decrypted vault content.
  */
 
-const CACHE_NAME = 'secure-vault-v1';
+const CACHE_NAME = 'secure-vault-v2';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -23,7 +23,10 @@ const STATIC_ASSETS = [
     './scripts/ui.js',
     './scripts/app.js',
     './workers/crypto-worker.js',
-    './assets/manifest.json'
+    './assets/manifest.json',
+    './assets/icon.svg',
+    './assets/icon-192.png',
+    './assets/icon-512.png'
 ];
 
 // ─── Install ──────────────────────────────────────────────────────
@@ -87,4 +90,20 @@ self.addEventListener('fetch', (event) => {
                     });
             })
     );
+});
+
+// ─── Message — handle update notifications ────────────────────────
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+// ─── Background Sync — queue offline actions ──────────────────────
+
+self.addEventListener('sync', (event) => {
+    if (event.tag === 'vault-sync') {
+        event.waitUntil(Promise.resolve());
+    }
 });
