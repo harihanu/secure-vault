@@ -58,7 +58,9 @@ const App = (() => {
             const storageInfo = await Storage.getStorageInfo();
             console.log('[App] Storage info:', storageInfo);
 
-            if (!storageInfo.persisted && storageInfo.mode !== 'opfs') {
+            // Only show warning if OPFS is NOT available AND storage is not persistent
+            // OPFS is reliable even without explicit persistence
+            if (storageInfo.mode !== 'opfs' && !storageInfo.persisted) {
                 console.warn('[App] Storage NOT persistent — data may be cleared');
                 // Show warning after UI loads
                 setTimeout(() => {
