@@ -42,6 +42,8 @@ const Backup = (() => {
 
     async function importVault(file, mode, importPassword) {
         try {
+            console.log('[Backup] Starting import...', { mode, isFirstTime: App.state.isFirstTime });
+
             const text = await readFileAsText(file);
             const envelope = JSON.parse(text);
 
@@ -67,8 +69,26 @@ const Backup = (() => {
                 return false;
             }
 
-            if (mode === 'replace') {
+            // Check if this is a fresh import (no existing vault)
+            const isFirstTime = App.state.isFirstTime || !App.state.vault;
+
+            if (isFirstTime) {
+                // Fresh import — create new vault from imported data
+                console.log('[Backup] Fresh import — creating new vault');
+                App.state.vault = {
+                    entries: vaultData.entries,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                App.state.masterPassword = importPassword;
+                App.state.salt = envelope.salt;
+                App.state.isFirstTime = false;
+
+                UI.showToast(`Created vault with ${vaultData.entries.length} entries`, 'success');
+            } else if (mode === 'replace') {
+                // Replace existing vault
                 App.state.vault.entries = vaultData.entries;
+                App.state.vault.updatedAt = new Date().toISOString();
                 UI.showToast(`Replaced vault with ${vaultData.entries.length} entries`, 'success');
             } else {
                 // Merge: add new, update existing
@@ -89,23 +109,27 @@ const Backup = (() => {
                         }
                     }
                 }
+                App.state.vault.updatedAt = new Date().toISOString();
 
                 UI.showToast(`Merged: ${added} added, ${updated} updated`, 'success');
             }
 
-            // Save vault
+            // Save vault to storage
+            console.log('[Backup] Saving vault to storage...');
             const envelope2 = await Vault.saveVault(
                 App.state.vault,
                 App.state.masterPassword,
                 App.state.salt
             );
             App.state.salt = envelope2.salt;
+            console.log('[Backup] Vault saved successfully');
 
             Audit.log('vault_imported', `Imported vault (${mode} mode)`);
             App.renderDashboard();
 
             return true;
         } catch (error) {
+            console.error('[Backup] Import failed:', error);
             UI.showToast('Import failed: ' + error.message, 'error');
             return false;
         }

@@ -17,16 +17,91 @@ const App = (() => {
         pendingRecoveryCodes: null
     };
 
+    // ─── Session Persistence ──────────────────────────────────────
+
+    const SESSION_KEY = 'vault_session';
+
+    function saveSession(password) {
+        try {
+            sessionStorage.setItem(SESSION_KEY, password);
+            console.log('[Session] Saved to sessionStorage');
+        } catch (e) {
+            console.warn('[Session] Failed to save:', e);
+        }
+    }
+
+    function getSession() {
+        try {
+            return sessionStorage.getItem(SESSION_KEY);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function clearSession() {
+        try {
+            sessionStorage.removeItem(SESSION_KEY);
+            console.log('[Session] Cleared from sessionStorage');
+        } catch (e) {
+            // Ignore
+        }
+    }
+
     // ─── Initialization ────────────────────────────────────────────
 
     async function init() {
         try {
+            // Initialize storage first (detects OPFS/IndexedDB)
+            await Storage.open();
+
+            // Check storage persistence
+            const storageInfo = await Storage.getStorageInfo();
+            console.log('[App] Storage info:', storageInfo);
+
+            if (!storageInfo.persisted && storageInfo.mode !== 'opfs') {
+                console.warn('[App] Storage NOT persistent — data may be cleared');
+                // Show warning after UI loads
+                setTimeout(() => {
+                    UI.showToast(
+                        'Storage warning: Browser may clear vault data. Use Chrome/Firefox for best reliability.',
+                        'warning',
+                        10000
+                    );
+                }, 2000);
+            }
+
             Security.init();
             Vault.init();
             Session.init();
             Session.onLock(handleLock);
 
             state.isFirstTime = !(await Vault.vaultExists());
+
+            // Check for existing session (F5 refresh)
+            if (!state.isFirstTime) {
+                const savedPassword = getSession();
+                if (savedPassword) {
+                    console.log('[App] Found saved session, attempting auto-unlock...');
+                    try {
+                        const result = await Vault.loadVault(savedPassword);
+                        state.vault = result.data;
+                        state.masterPassword = savedPassword;
+                        state.salt = result.envelope.salt;
+
+                        Security.resetAttempts();
+                        Session.unlock();
+
+                        renderDashboard();
+                        showScreen('dashboard');
+                        UI.showToast('Session restored', 'success');
+                        attachEventListeners();
+                        return;
+                    } catch (e) {
+                        console.log('[App] Auto-unlock failed, clearing session:', e.message);
+                        clearSession();
+                    }
+                }
+            }
 
             renderLockScreen();
             attachEventListeners();
@@ -132,6 +207,7 @@ const App = (() => {
 
             Security.resetAttempts();
             Session.unlock();
+            saveSession(password); // Persist session across refreshes
             Audit.log('vault_created', 'Vault created');
 
             renderDashboard();
@@ -177,6 +253,7 @@ const App = (() => {
 
             Security.resetAttempts();
             Session.unlock();
+            saveSession(password); // Persist session across refreshes
             Audit.log('vault_unlocked', 'Vault unlocked');
 
             renderDashboard();
@@ -216,6 +293,7 @@ const App = (() => {
 
     function handleLock(reason) {
         clearSensitiveState();
+        clearSession(); // Clear session so F5 won't auto-unlock
         renderLockScreen();
         showScreen('lock-screen');
 
@@ -550,8 +628,15 @@ const App = (() => {
             if (!file) { UI.showToast('Select a file', 'error'); return; }
             if (!password) { UI.showToast('Enter the vault password', 'error'); return; }
 
+            console.log('Starting import...', { mode, fileName: file.name });
             const success = await Backup.importVault(file, mode, password);
-            if (success) UI.closeModal('import-modal');
+            if (success) {
+                console.log('Import successful, vault saved');
+                UI.closeModal('import-modal');
+                UI.showToast('Vault imported and saved! You can now lock and unlock safely.', 'success');
+            } else {
+                console.log('Import failed');
+            }
         });
 
         document.getElementById('import-cancel').addEventListener('click', () => UI.closeModal('import-modal'));

@@ -92,6 +92,7 @@ const Security = (() => {
         if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
             const meta = document.createElement('meta');
             meta.httpEquiv = 'Content-Security-Policy';
+            // Note: frame-ancestors can only be enforced via HTTP header, not meta tag
             meta.content = [
                 "default-src 'self'",
                 "script-src 'self' 'unsafe-inline'",
@@ -99,7 +100,6 @@ const Security = (() => {
                 "img-src 'self' data:",
                 "font-src 'self'",
                 "connect-src 'self'",
-                "frame-ancestors 'none'",
                 "base-uri 'self'",
                 "form-action 'self'"
             ].join('; ');
