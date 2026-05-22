@@ -1,0 +1,39 @@
+{
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Secure Vault",
+            "weight": "Bolder",
+            "size": "Large",
+            "wrap": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "Quick access to your encrypted vault entries",
+            "wrap": true
+        },
+        {
+            "type": "FactSet",
+            "facts": [
+                {
+                    "title": "Status",
+                    "value": "Locked"
+                },
+                {
+                    "title": "Entries",
+                    "value": "Tap to open vault"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.OpenUrl",
+            "title": "Open Vault",
+            "url": "https://harihanu.github.io/secure-vault/"
+        }
+    ]
+}

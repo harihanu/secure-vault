@@ -1,12 +1,7 @@
 'use strict';
 
-/**
- * Service Worker — Offline caching for Secure Vault
- * IMPORTANT: Never cache decrypted vault content.
- */
-
-const CACHE_NAME = 'secure-vault-v3';
-const STATIC_ASSETS = [
+const CACHE_NAME = 'secure-vault-v4';
+const ASSETS = [
     './',
     './index.html',
     './styles/main.css',
@@ -26,90 +21,64 @@ const STATIC_ASSETS = [
     './assets/manifest.json',
     './assets/icon.svg',
     './assets/icon-192.png',
-    './assets/icon-512.png'
+    './assets/icon-512.png',
+    './assets/widget-template.json'
 ];
 
-// ─── Install — Pre-cache app shell ────────────────────────────────
-
-self.addEventListener('install', (event) => {
+// Install: pre-cache all app shell assets
+self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(STATIC_ASSETS))
+            .then(cache => cache.addAll(ASSETS))
             .then(() => self.skipWaiting())
     );
 });
 
-// ─── Activate — Clean old caches ──────────────────────────────────
-
-self.addEventListener('activate', (event) => {
+// Activate: remove old caches
+self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys()
-            .then(keys => Promise.all(
-                keys
-                    .filter(key => key !== CACHE_NAME)
-                    .map(key => caches.delete(key))
-            ))
-            .then(() => self.clients.claim())
+        caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+        ).then(() => self.clients.claim())
     );
 });
 
-// ─── Fetch — Offline-first with network fallback ──────────────────
-
-self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-
+// Fetch: serve from cache, fall back to network, cache new requests
+self.addEventListener('fetch', event => {
     event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(event.request).then(response => {
-                if (!response || response.status !== 200 || response.type !== 'basic') {
-                    return response;
+        caches.match(event.request).then(response => {
+            return response || fetch(event.request).then(fetchResponse => {
+                if (fetchResponse && fetchResponse.status === 200) {
+                    const clone = fetchResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
                 }
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseToCache);
-                });
-                return response;
-            }).catch(() => {
-                if (event.request.destination === 'document') {
-                    return caches.match('./index.html');
-                }
+                return fetchResponse;
             });
+        }).catch(() => {
+            if (event.request.mode === 'navigate') {
+                return caches.match('./index.html');
+            }
         })
     );
 });
 
-// ─── Periodic Background Sync ─────────────────────────────────────
-
-self.addEventListener('periodicsync', (event) => {
+// Periodic Background Sync
+self.addEventListener('periodicsync', event => {
     if (event.tag === 'vault-check') {
-        event.waitUntil(
-            caches.open(CACHE_NAME).then(cache => {
-                return cache.addAll(STATIC_ASSETS);
-            })
-        );
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
     }
 });
 
-// ─── Background Sync ──────────────────────────────────────────────
-
-self.addEventListener('sync', (event) => {
+// Background Sync
+self.addEventListener('sync', event => {
     if (event.tag === 'background-sync') {
-        // Placeholder for future background sync
+        // placeholder
     }
 });
 
-// ─── Push Notifications ───────────────────────────────────────────
-
-self.addEventListener('push', (event) => {
-    // Placeholder for future push notifications
-});
-
-self.addEventListener('notificationclick', (event) => {
+// Push
+self.addEventListener('push', () => {});
+self.addEventListener('notificationclick', event => {
     event.notification.close();
-    event.waitUntil(
-        clients.openWindow('/')
-    );
+    event.waitUntil(clients.openWindow('/'));
 });

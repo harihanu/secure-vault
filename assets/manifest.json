@@ -6,7 +6,7 @@
     "start_url": "/secure-vault/",
     "scope": "/secure-vault/",
     "display": "standalone",
-    "display_override": ["window-controls-overlay", "standalone", "tabbed"],
+    "display_override": ["tabbed", "window-controls-overlay", "standalone"],
     "orientation": "portrait",
     "background_color": "#0f172a",
     "theme_color": "#00d4ff",
