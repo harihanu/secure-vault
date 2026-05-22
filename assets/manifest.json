@@ -2,19 +2,45 @@
     "name": "Secure Vault",
     "short_name": "Vault",
     "description": "Enterprise-grade encrypted password manager — your data never leaves your device.",
-    "id": "/",
-    "start_url": "./index.html",
-    "scope": "./",
+    "id": "/secure-vault/",
+    "start_url": "/secure-vault/",
+    "scope": "/secure-vault/",
     "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone"],
     "orientation": "portrait",
     "background_color": "#0f172a",
     "theme_color": "#00d4ff",
     "categories": ["security", "utilities"],
+    "prefer_related_applications": false,
     "icons": [
         {
-            "src": "icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
+            "src": "icon-72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-152.png",
+            "sizes": "152x152",
+            "type": "image/png",
             "purpose": "any"
         },
         {
@@ -24,17 +50,45 @@
             "purpose": "any maskable"
         },
         {
+            "src": "icon-384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
             "src": "icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
+        },
+        {
+            "src": "icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "screenshot-desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Secure Vault desktop view"
+        },
+        {
+            "src": "screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Secure Vault mobile view"
         }
     ],
     "shortcuts": [
         {
             "name": "Add Entry",
             "short_name": "Add",
-            "url": "./index.html?action=add",
+            "url": "/secure-vault/?action=add",
             "icons": [
                 {
                     "src": "icon-192.png",
